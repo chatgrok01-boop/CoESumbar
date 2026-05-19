@@ -20,26 +20,37 @@ import {
   orderBy, 
   limit 
 } from "firebase/firestore";
-import { fileURLToPath } from "url";
+import fs from "fs";
 import { DISTRICT_AUTH } from "./src/constants";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-import fs from "fs";
-
 // Initialize Firebase using the client SDK with API Key
-const firebaseConfig = JSON.parse(fs.readFileSync("./firebase-applet-config.json", "utf8"));
-console.log(`Initializing Firebase for project: ${firebaseConfig.projectId}, database: ${firebaseConfig.firestoreDatabaseId}`);
+let firebaseConfig;
+try {
+  const configPath = path.join(process.cwd(), "firebase-applet-config.json");
+  if (fs.existsSync(configPath)) {
+    firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    console.log(`Initializing Firebase for project: ${firebaseConfig.projectId}`);
+  } else {
+    console.warn("firebase-applet-config.json not found, using empty config");
+    firebaseConfig = {};
+  }
+} catch (err) {
+  console.error("Error loading firebase-applet-config.json:", err);
+  firebaseConfig = {};
+}
 
-const app = initializeApp(firebaseConfig);
-const db = initializeFirestore(app, {
+const firebaseApp = firebaseConfig.projectId ? initializeApp(firebaseConfig) : null;
+const db = firebaseApp ? initializeFirestore(firebaseApp, {
   experimentalForceLongPolling: true,
-}, firebaseConfig.firestoreDatabaseId);
+}, firebaseConfig.firestoreDatabaseId) : null;
 
 // Seed initial data if empty
 async function seedData() {
   try {
+    if (!db) {
+      console.warn("Database not initialized, skipping seed.");
+      return;
+    }
     const q = query(collection(db, "events"), limit(1));
     const snapshot = await getDocs(q);
     if (snapshot.empty) {
@@ -92,6 +103,9 @@ async function startServer() {
 
   app.get("/api/db-test", async (req, res) => {
     try {
+      if (!db) {
+        return res.status(500).json({ error: "Database not initialized" });
+      }
       const q = query(collection(db, "events"), limit(1));
       const snapshot = await getDocs(q);
       res.json({ status: "ok", size: snapshot.size, project: firebaseConfig.projectId, db: firebaseConfig.firestoreDatabaseId });
@@ -146,6 +160,7 @@ async function startServer() {
   // Events
   app.get("/api/events", async (req, res) => {
     try {
+      if (!db) return res.json([]);
       const q = query(collection(db, "events"), orderBy("startDate", "desc"));
       const snapshot = await getDocs(q);
       const events = snapshot.docs.map(doc => ({
@@ -161,6 +176,7 @@ async function startServer() {
 
   app.post("/api/events", async (req, res) => {
     try {
+      if (!db) return res.status(500).json({ error: "Database not initialized" });
       const eventData = req.body;
       // Basic validation
       if (!eventData.title || !eventData.districtId) {
@@ -182,6 +198,7 @@ async function startServer() {
 
   app.put("/api/events/:id", async (req, res) => {
     try {
+      if (!db) return res.status(500).json({ error: "Database not initialized" });
       const { id } = req.params;
       const eventData = req.body;
       
@@ -199,6 +216,7 @@ async function startServer() {
 
   app.delete("/api/events/:id", async (req, res) => {
     try {
+      if (!db) return res.status(500).json({ error: "Database not initialized" });
       const { id } = req.params;
       await deleteDoc(doc(db, "events", id));
       res.json({ success: true });
