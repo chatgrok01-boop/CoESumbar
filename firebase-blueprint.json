@@ -1,0 +1,47 @@
+{
+  "entities": {
+    "Event": {
+      "title": "Event",
+      "description": "Tourism event data for West Sumatra",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Name of the event" },
+        "description": { "type": "string", "description": "Brief details about the event" },
+        "startDate": { "type": "string", "format": "date", "description": "When the event starts" },
+        "endDate": { "type": "string", "format": "date", "description": "When the event ends" },
+        "location": { "type": "string", "description": "Specific venue" },
+        "districtId": { "type": "string", "description": "The ID of the Kabupaten/Kota" },
+        "districtName": { "type": "string", "description": "The name of the Kabupaten/Kota" },
+        "category": { "type": "string", "description": "Type of event (e.g., Budaya, Kuliner)" },
+        "count": { "type": "integer", "description": "Number of attendees or sub-events" },
+        "budget": { "type": "integer", "description": "Estimated budget in IDR" },
+        "sync_token": { "type": "string", "description": "Internal sync token" },
+        "createdBy": { "type": "string", "description": "UID of the user who created it" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "startDate", "endDate", "districtId", "districtName"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile for different districts",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "districtId": { "type": "string" },
+        "role": { "type": "string", "enum": ["district", "province"] }
+      },
+      "required": ["userId", "districtId", "role"]
+    }
+  },
+  "firestore": {
+    "events": {
+      "schema": "Event",
+      "description": "Collection of all tourism events"
+    },
+    "users": {
+      "schema": "User",
+      "description": "User mapping to districts"
+    }
+  }
+}

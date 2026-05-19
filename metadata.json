@@ -1,0 +1,6 @@
+{
+  "name": "Event Sumbar",
+  "description": "Sistem pendataan event pariwisata Sumatera Barat untuk Kabupaten/Kota dan Provinsi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
